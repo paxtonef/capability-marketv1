@@ -1,0 +1,872 @@
+
+
+################################################################
+# 0. ENVIRONNEMENT ET COMMITS
+################################################################
+
+$ date -u +%Y-%m-%dT%H:%M:%SZ
+2026-11-20T09:41:48Z
+[exit 0]
+
+$ uname -srm
+Linux 6.18.44-fc-v726 x86_64
+[exit 0]
+
+$ rustc --version && cargo --version && cargo clippy --version && cargo fmt --version
+rustc 1.97.0 (2d8144b78 2026-07-07)
+cargo 1.97.0 (c980f4866 2026-06-30)
+clippy 0.1.97 (2d8144b788 2026-07-07)
+rustfmt 1.9.0-stable (2d8144b788 2026-07-07)
+[exit 0]
+
+$ /tmp/cm_venv/bin/python --version
+Python 3.13.18
+[exit 0]
+
+$ /tmp/cm_venv/bin/python -m pip list 2>/dev/null | grep -iE '^(sqlalchemy|alembic|psycopg2-binary|pydantic|pydantic-settings|structlog|jsonschema) '
+alembic                   1.20.1
+jsonschema                4.26.0
+psycopg2-binary           2.9.13
+pydantic                  2.14.4
+pydantic-settings         2.16.3
+SQLAlchemy                2.1.9
+structlog                 26.1.0
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/postgres --version
+postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
+[exit 0]
+
+$ git clone -q --branch feature/procurement-v0.3 /home/claude/capability-marketv1 /tmp/validate/capability-marketv1 && git -C /tmp/validate/capability-marketv1 log --oneline -3
+d8d675e PROCUREMENT V0.3: enregistrement des contrats au registre B6 de test
+427ebf3 PROCUREMENT V0.3: extraction structuree et tracable des exigences
+db30fe2 Initial baseline - Capability Market V1 - Procurement V0.2
+[exit 0]
+
+$ git -C /tmp/validate/capability-marketv1 rev-parse HEAD
+d8d675e71441d66fa007995f4ded6b6e11e22d2a
+[exit 0]
+
+$ git -C /tmp/validate/capability-marketv1 merge-base --is-ancestor db30fe2 HEAD && echo 'db30fe2 est un ancetre du commit teste'
+db30fe2 est un ancetre du commit teste
+[exit 0]
+
+$ git -C /home/claude/paxtonef/cpl rev-parse HEAD && git -C /home/claude/paxtonef/cpl remote get-url origin
+3ccdf63a8e2fd2879bbb9eea71053ab11c176e7c
+https://github.com/paxtonef/cpl
+[exit 0]
+
+$ git -C /home/claude/paxtonef/cpl-product-integration rev-parse HEAD && git -C /home/claude/paxtonef/cpl-product-integration remote get-url origin
+dc3ac3283cc3c5cb274171b11fd39a613c370189
+https://github.com/paxtonef/cpl-product-integration
+[exit 0]
+
+$ readlink /root/cpl /root/Projects/capability-market-v1
+/home/claude/paxtonef/cpl
+/tmp/validate/capability-marketv1
+[exit 0]
+
+
+################################################################
+# 1. BASE DE TEST
+################################################################
+Instance PostgreSQL locale, creee pour cette validation, ecoute sur 127.0.0.1:55432 uniquement.
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At postgres -c "select datname from pg_database where not datistemplate order by 1"
+capability_market_v1_test
+postgres
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/dropdb -h 127.0.0.1 -p 55432 -U cm_validation --if-exists capability_market_v1_test && /usr/lib/postgresql/16/bin/createdb -h 127.0.0.1 -p 55432 -U cm_validation capability_market_v1_test
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At postgres -c "select datname from pg_database where not datistemplate order by 1"
+capability_market_v1_test
+postgres
+[exit 0]
+
+$ echo DATABASE_URL=$DATABASE_URL
+DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/capability_market_v1_test
+[exit 0]
+
+$ cd /home/claude/paxtonef/cpl && alembic upgrade head 2>&1 | tail -3
+correction/supersession support (REQ-B5-069..074).
+INFO  [alembic.runtime.migration] Running upgrade 026 -> 027, Create B6 Execution/Artifact Governance infrastructure.
+INFO  [alembic.runtime.migration] Running upgrade 027 -> 028, Create B2-K manufacturer knowledge persistence (non-execution-scoped).
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At capability_market_v1_test -c 'select current_database()' -c 'select version_num from public.alembic_version'
+capability_market_v1_test
+028
+[exit 0]
+
+Nombre de lignes par table du schema cpl avant les tests :
+accounts=0
+asset_creation_requests=0
+asset_identifiers=0
+asset_identity_resolutions=0
+asset_merge_requests=0
+assets=0
+canonical_asset_identity_decisions=0
+canonical_case_decisions=0
+canonical_relationship_decisions=0
+case_event_types=0
+case_events=0
+case_mutation_requests=0
+case_participants=0
+cases=0
+contact_asset_relationships=0
+contact_creation_requests=0
+contact_point_verifications=0
+contact_points=0
+contacts=0
+domain_projections=0
+external_references=0
+identity_operations=0
+manufacturer_knowledge_dashboard_entries=0
+manufacturer_knowledge_documents=0
+merge_proposals=0
+relationship_mutation_requests=0
+runner_artifact_schema_definitions=0
+runner_artifacts=0
+runner_execution_corrections=0
+runner_executions=0
+runner_governance_decisions=0
+
+
+################################################################
+# 2. CODE LIVRE
+################################################################
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo build --release 2>&1
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling syn v3.0.10
+   Compiling serde_json v1.0.154
+   Compiling serde v1.0.229
+   Compiling serde_derive v1.0.229
+   Compiling itoa v1.0.19
+   Compiling memchr v2.8.3
+   Compiling procurement v0.3.0 (/tmp/validate/capability-marketv1/runners/procurement)
+    Finished `release` profile [optimized] target(s) in 8.47s
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo test 2>&1
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling syn v3.0.10
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.154
+   Compiling serde_derive v1.0.229
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.19
+   Compiling procurement v0.3.0 (/tmp/validate/capability-marketv1/runners/procurement)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.58s
+     Running unittests src/lib.rs (target/debug/deps/procurement-139e4cc1c215a816)
+
+running 43 tests
+test classifier::tests::conditions_attach_to_other_categories_without_renaming_them ... ok
+test classifier::tests::condition_kinds_are_distinguished ... ok
+test classifier::tests::descriptive_sentences_carry_no_category ... ok
+test classifier::tests::english_negations_are_prohibitions ... ok
+test classifier::tests::exemptions_in_french_and_english ... ok
+test classifier::tests::leading_condition_makes_a_conditional_obligation ... ok
+test classifier::tests::marker_followed_by_punctuation_is_detected ... ok
+test classifier::tests::french_negations_are_prohibitions ... ok
+test classifier::tests::negated_obligation_is_not_reported_as_obligation ... ok
+test classifier::tests::negation_keeps_the_whole_marker_as_modality ... ok
+test classifier::tests::negation_of_necessity_is_an_exemption_not_a_prohibition ... ok
+test classifier::tests::nominal_markers_are_identified ... ok
+test classifier::tests::negation_without_second_term_is_flagged_not_guessed ... ok
+test classifier::tests::obligations_in_french_and_english ... ok
+test classifier::tests::optional_provisions_in_french_and_english ... ok
+test classifier::tests::pending_information_inside_a_requirement_is_flagged ... ok
+test classifier::tests::pending_information_is_an_uncertainty_only ... ok
+test classifier::tests::several_modalities_in_one_sentence_are_flagged ... ok
+test classifier::tests::unconditional_obligation_has_no_condition ... ok
+test classifier::tests::trailing_condition_runs_to_the_end_of_the_sentence ... ok
+test classifier::tests::vague_term_inside_a_requirement_is_flagged ... ok
+test classifier::tests::vague_term_without_normative_content_is_not_flagged ... ok
+test classifier::tests::weak_modality_is_never_promoted_to_an_obligation ... ok
+test legacy::tests::detects_english_requirement ... ok
+test legacy::tests::detects_french_requirement ... ok
+test legacy::tests::escapes_json_special_characters ... ok
+test legacy::tests::reports_no_detected_requirements ... ok
+test legacy::tests::classifies_complex_tender_v02 ... ok
+test lexicon::tests::matches_regardless_of_case_accents_and_apostrophes ... ok
+test lexicon::tests::spans_map_back_to_exact_source_bytes ... ok
+test lexicon::tests::tolerates_repeated_whitespace_inside_markers ... ok
+test reader::tests::rejects_invalid_utf8 ... ok
+test reader::tests::reports_missing_file ... ok
+test reader::tests::strips_bom_and_keeps_offset ... ok
+test segmenter::tests::keeps_abbreviations_numbers_and_initials_together ... ok
+test segmenter::tests::positions_are_exact_slices_of_the_source ... ok
+test segmenter::tests::recognises_numbered_headings_by_form_only ... ok
+test segmenter::tests::splits_lines_and_skips_blank_ones ... ok
+test lexicon::tests::respects_word_boundaries ... ok
+test segmenter::tests::splits_on_semicolon ... ok
+test serializer::tests::enumerations_use_contract_names ... ok
+test segmenter::tests::splits_sentences_on_one_line ... ok
+test serializer::tests::escapes_special_and_control_characters ... ok
+
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src/main.rs (target/debug/deps/procurement-68b6bd70e3f0302a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/debug/deps/cli-10558826eb3744dd)
+
+running 14 tests
+test non_utf8_source_is_refused_rather_than_altered ... ok
+test help_and_version_are_available ... ok
+test output_does_not_depend_on_environment ... ok
+test profile_1_0_reproduces_the_v01_requirements ... ok
+test profile_1_0_reproduces_the_v02_output_byte_for_byte ... ok
+test pretty_and_compact_outputs_carry_the_same_data ... ok
+test profile_1_1_matches_the_reference_output_of_the_complex_tender ... ok
+test profile_1_1_matches_the_reference_output_of_the_modalities_tender ... ok
+test reads_standard_input_and_writes_output_file ... ok
+test title_and_identifier_are_escaped_not_interpreted ... ok
+test unreadable_source_exits_with_code_1 ... ok
+test v02_invocation_still_works_and_emits_valid_json ... ok
+test wrong_usage_exits_with_code_2 ... ok
+test repeated_runs_are_byte_identical ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+     Running tests/traceability.rs (target/debug/deps/traceability-b9988757eabc5151)
+
+running 11 tests
+test every_condition_is_an_exact_slice_inside_its_requirement ... ok
+test both_profiles_satisfy_both_contract_versions ... ok
+test every_evidence_is_the_exact_source_slice_at_its_location ... ok
+test every_located_uncertainty_is_an_exact_source_slice ... ok
+test every_requirement_text_comes_verbatim_from_its_evidence ... ok
+test identifiers_are_sequential_unique_and_consistent ... ok
+test nothing_is_extracted_from_a_document_without_normative_statement ... ok
+test profile_1_1_is_a_superset_of_profile_1_0 ... ok
+test section_headings_are_not_turned_into_requirements ... ok
+test unusual_input_never_breaks_exact_slicing ... ok
+test library_runs_are_deterministic ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.09s
+
+   Doc-tests procurement
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo test --release 2>&1
+   Compiling procurement v0.3.0 (/tmp/validate/capability-marketv1/runners/procurement)
+    Finished `release` profile [optimized] target(s) in 3.57s
+     Running unittests src/lib.rs (target/release/deps/procurement-a8adc822982fa139)
+
+running 43 tests
+test classifier::tests::conditions_attach_to_other_categories_without_renaming_them ... ok
+test classifier::tests::condition_kinds_are_distinguished ... ok
+test classifier::tests::descriptive_sentences_carry_no_category ... ok
+test classifier::tests::english_negations_are_prohibitions ... ok
+test classifier::tests::exemptions_in_french_and_english ... ok
+test classifier::tests::french_negations_are_prohibitions ... ok
+test classifier::tests::marker_followed_by_punctuation_is_detected ... ok
+test classifier::tests::leading_condition_makes_a_conditional_obligation ... ok
+test classifier::tests::negated_obligation_is_not_reported_as_obligation ... ok
+test classifier::tests::negation_keeps_the_whole_marker_as_modality ... ok
+test classifier::tests::negation_of_necessity_is_an_exemption_not_a_prohibition ... ok
+test classifier::tests::negation_without_second_term_is_flagged_not_guessed ... ok
+test classifier::tests::nominal_markers_are_identified ... ok
+test classifier::tests::obligations_in_french_and_english ... ok
+test classifier::tests::pending_information_inside_a_requirement_is_flagged ... ok
+test classifier::tests::pending_information_is_an_uncertainty_only ... ok
+test classifier::tests::optional_provisions_in_french_and_english ... ok
+test classifier::tests::several_modalities_in_one_sentence_are_flagged ... ok
+test classifier::tests::unconditional_obligation_has_no_condition ... ok
+test classifier::tests::trailing_condition_runs_to_the_end_of_the_sentence ... ok
+test classifier::tests::vague_term_inside_a_requirement_is_flagged ... ok
+test classifier::tests::vague_term_without_normative_content_is_not_flagged ... ok
+test classifier::tests::weak_modality_is_never_promoted_to_an_obligation ... ok
+test legacy::tests::detects_english_requirement ... ok
+test legacy::tests::classifies_complex_tender_v02 ... ok
+test legacy::tests::detects_french_requirement ... ok
+test legacy::tests::escapes_json_special_characters ... ok
+test legacy::tests::reports_no_detected_requirements ... ok
+test lexicon::tests::matches_regardless_of_case_accents_and_apostrophes ... ok
+test lexicon::tests::respects_word_boundaries ... ok
+test lexicon::tests::spans_map_back_to_exact_source_bytes ... ok
+test lexicon::tests::tolerates_repeated_whitespace_inside_markers ... ok
+test reader::tests::rejects_invalid_utf8 ... ok
+test reader::tests::reports_missing_file ... ok
+test reader::tests::strips_bom_and_keeps_offset ... ok
+test segmenter::tests::keeps_abbreviations_numbers_and_initials_together ... ok
+test segmenter::tests::recognises_numbered_headings_by_form_only ... ok
+test segmenter::tests::positions_are_exact_slices_of_the_source ... ok
+test segmenter::tests::splits_lines_and_skips_blank_ones ... ok
+test segmenter::tests::splits_on_semicolon ... ok
+test segmenter::tests::splits_sentences_on_one_line ... ok
+test serializer::tests::enumerations_use_contract_names ... ok
+test serializer::tests::escapes_special_and_control_characters ... ok
+
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/release/deps/procurement-9629f2af3625d0ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/release/deps/cli-e94a0c754e4b3911)
+
+running 14 tests
+test non_utf8_source_is_refused_rather_than_altered ... ok
+test help_and_version_are_available ... ok
+test output_does_not_depend_on_environment ... ok
+test profile_1_0_reproduces_the_v01_requirements ... ok
+test profile_1_0_reproduces_the_v02_output_byte_for_byte ... ok
+test profile_1_1_matches_the_reference_output_of_the_complex_tender ... ok
+test pretty_and_compact_outputs_carry_the_same_data ... ok
+test profile_1_1_matches_the_reference_output_of_the_modalities_tender ... ok
+test reads_standard_input_and_writes_output_file ... ok
+test title_and_identifier_are_escaped_not_interpreted ... ok
+test unreadable_source_exits_with_code_1 ... ok
+test v02_invocation_still_works_and_emits_valid_json ... ok
+test wrong_usage_exits_with_code_2 ... ok
+test repeated_runs_are_byte_identical ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/traceability.rs (target/release/deps/traceability-75b9d3648d4207a8)
+
+running 11 tests
+test every_condition_is_an_exact_slice_inside_its_requirement ... ok
+test both_profiles_satisfy_both_contract_versions ... ok
+test every_evidence_is_the_exact_source_slice_at_its_location ... ok
+test every_located_uncertainty_is_an_exact_source_slice ... ok
+test identifiers_are_sequential_unique_and_consistent ... ok
+test every_requirement_text_comes_verbatim_from_its_evidence ... ok
+test nothing_is_extracted_from_a_document_without_normative_statement ... ok
+test profile_1_1_is_a_superset_of_profile_1_0 ... ok
+test section_headings_are_not_turned_into_requirements ... ok
+test unusual_input_never_breaks_exact_slicing ... ok
+test library_runs_are_deterministic ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.90s
+
+   Doc-tests procurement
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo test --release -- --ignored 2>&1 | grep -E 'Running|test result'
+     Running unittests src/lib.rs (target/release/deps/procurement-a8adc822982fa139)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 43 filtered out; finished in 0.00s
+     Running unittests src/main.rs (target/release/deps/procurement-9629f2af3625d0ca)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/cli.rs (target/release/deps/cli-e94a0c754e4b3911)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+     Running tests/traceability.rs (target/release/deps/traceability-75b9d3648d4207a8)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo clippy --all-targets -- -D warnings 2>&1
+    Checking serde_core v1.0.229
+    Checking zmij v1.0.23
+    Checking itoa v1.0.19
+    Checking memchr v2.8.3
+    Checking serde v1.0.229
+    Checking serde_json v1.0.154
+    Checking procurement v0.3.0 (/tmp/validate/capability-marketv1/runners/procurement)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.42s
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1/runners/procurement && cargo fmt --check && echo 'formatage conforme'
+formatage conforme
+[exit 0]
+
+$ ls -la /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement && /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement --version
+-rwxr-xr-x 2 root root 675288 Nov 20 10:42 /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement
+procurement 0.3.0 (cm.procurement.requirements.v1 1.0.0, 1.1.0)
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python -c 'import jsonschema; print("jsonschema", jsonschema.__version__)'
+<string>:1: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+jsonschema 4.26.0
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && PROCUREMENT_BIN=/tmp/validate/capability-marketv1/runners/procurement/target/release/procurement /tmp/cm_venv/bin/python -m unittest tests/test_procurement_v03_contract.py -v 2>&1
+test_1_1_keeps_the_root_structure_of_1_0 (tests.test_procurement_v03_contract.ContractFiles.test_1_1_keeps_the_root_structure_of_1_0) ... ok
+test_both_contracts_are_valid_b6_contracts (tests.test_procurement_v03_contract.ContractFiles.test_both_contracts_are_valid_b6_contracts) ... VALID: cm.procurement.requirements.v1 @ 1.0.0
+VALID: cm.procurement.requirements.v1 @ 1.1.0
+ok
+test_schema_root_matches_the_b6_contract (tests.test_procurement_v03_contract.ContractFiles.test_schema_root_matches_the_b6_contract) ... ok
+test_1_1_outputs_add_no_root_field (tests.test_procurement_v03_contract.Payloads.test_1_1_outputs_add_no_root_field) ... ok
+test_1_1_outputs_keep_every_1_0_item_field (tests.test_procurement_v03_contract.Payloads.test_1_1_outputs_keep_every_1_0_item_field) ... ok
+test_1_1_outputs_validate_against_the_json_schema (tests.test_procurement_v03_contract.Payloads.test_1_1_outputs_validate_against_the_json_schema) ... ok
+test_every_reference_output_satisfies_both_contracts (tests.test_procurement_v03_contract.Payloads.test_every_reference_output_satisfies_both_contracts) ... ok
+test_evidence_excerpts_are_exact_source_bytes (tests.test_procurement_v03_contract.Payloads.test_evidence_excerpts_are_exact_source_bytes) ... ok
+test_runner_reproduces_reference_outputs (tests.test_procurement_v03_contract.Runner.test_runner_reproduces_reference_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.130s
+
+OK
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python install_contracts.py contracts/procurement_requirements_v1.json && /tmp/cm_venv/bin/python install_contracts.py contracts/procurement_requirements_v1_1.json
+VALID: cm.procurement.requirements.v1 @ 1.0.0
+VALID: cm.procurement.requirements.v1 @ 1.1.0
+[exit 0]
+
+
+################################################################
+# 3. INTEGRATION CPL B6
+################################################################
+--- 3.1 Garde-fous : bases interdites refusees avant toute connexion
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/cpl_db /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/cpl_db /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/pi01_test /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/pi01_test /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/test /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/test /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/postgres /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+$ cd /tmp/validate/capability-marketv1 && DATABASE_URL=postgresql+psycopg2://cm_validation@127.0.0.1:55432/postgres /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+REFUS: DATABASE_URL doit cibler capability_market_v1_test
+[exit 1]
+
+--- 3.2 Temoin negatif : registre vide, l'artifact doit etre REJECTED (echec attendu)
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At capability_market_v1_test -c 'select count(*) from cpl.runner_artifact_schema_definitions'
+0
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && PROCUREMENT_BIN=/tmp/validate/capability-marketv1/runners/procurement/target/release/procurement /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1
+RUNNER OUTPUT: identique a la reference
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: REJECTED
+STRUCTURALLY VALID: False
+ROLLBACK: donnees de test non conservees
+Traceback (most recent call last):
+  File "/tmp/validate/capability-marketv1/tests/test_procurement_v03_integration.py", line 203, in <module>
+    assert artifact.artifact_status == "VALIDATED"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+[exit 1]
+
+--- 3.3 Enregistrement du contrat 1.0.0 au registre B6
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1.json
+VALID: cm.procurement.requirements.v1 @ 1.0.0
+DATABASE: capability_market_v1_test
+REGISTERED: cm.procurement.requirements.v1 @ 1.0.0
+[exit 0]
+
+--- 3.4 Non-regression : tests d'integration V0.1 et V0.2 inchanges
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/test_procurement_integration.py 2>&1
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: VALIDATED
+STRUCTURALLY VALID: True
+CPL B3-B6 INTEGRATION: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/test_procurement_rust_integration.py 2>&1
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: VALIDATED
+STRUCTURALLY VALID: True
+RUST PROCUREMENT -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/test_procurement_v02_integration.py 2>&1
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: VALIDATED
+STRUCTURALLY VALID: True
+RUST PROCUREMENT V0.2 -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+--- 3.5 PROCUREMENT V0.3 sous le contrat 1.0.0
+
+$ cd /tmp/validate/capability-marketv1 && PROCUREMENT_BIN=/tmp/validate/capability-marketv1/runners/procurement/target/release/procurement CPL_SCHEMA_VERSION=1.0.0 /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1
+RUNNER OUTPUT: identique a la reference
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: VALIDATED
+STRUCTURALLY VALID: True
+SCHEMA VERSION: 1.0.0
+RUST PROCUREMENT V0.3 -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+$ /tmp/cm_venv/bin/python /home/claude/validation/verify_artifact_status.py /tmp/validate/capability-marketv1 1.0.0 2>&1
+SQL artifact_status: VALIDATED
+SQL schema_name: cm.procurement.requirements.v1
+SQL schema_version: 1.0.0
+SQL artifact_type: TENDER_REQUIREMENTS
+SQL runner_type: PROCUREMENT
+SQL runner_version: 0.3.0
+SQL execution_status: CREATED
+SQL requirements: 7
+SQL binding_requirements: 5
+CONTENT INTEGRITY: MATCH
+PAYLOAD ROUND-TRIP IDENTICAL: True
+structurally_valid: True
+VERIFY 1.0.0: PASS
+ROLLBACK
+[exit 0]
+
+--- 3.6 Temoin negatif : contrat 1.1.0 pas encore enregistre (echec attendu)
+
+$ cd /tmp/validate/capability-marketv1 && PROCUREMENT_BIN=/tmp/validate/capability-marketv1/runners/procurement/target/release/procurement CPL_SCHEMA_VERSION=1.1.0 /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1
+RUNNER OUTPUT: identique a la reference
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: REJECTED
+STRUCTURALLY VALID: False
+ROLLBACK: donnees de test non conservees
+Traceback (most recent call last):
+  File "/tmp/validate/capability-marketv1/tests/test_procurement_v03_integration.py", line 203, in <module>
+    assert artifact.artifact_status == "VALIDATED"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+[exit 1]
+
+--- 3.7 Enregistrement du contrat 1.1.0 au registre B6
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+VALID: cm.procurement.requirements.v1 @ 1.1.0
+DATABASE: capability_market_v1_test
+REGISTERED: cm.procurement.requirements.v1 @ 1.1.0
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && /tmp/cm_venv/bin/python tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+VALID: cm.procurement.requirements.v1 @ 1.1.0
+DATABASE: capability_market_v1_test
+ALREADY REGISTERED: cm.procurement.requirements.v1 @ 1.1.0
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At capability_market_v1_test -c 'select schema_name, schema_version, required_fields, field_types from cpl.runner_artifact_schema_definitions order by 2'
+cm.procurement.requirements.v1|1.0.0|["tender_id", "title", "requirements", "evidence", "uncertainties"]|{"title": "string", "evidence": "array", "tender_id": "string", "requirements": "array", "uncertainties": "array"}
+cm.procurement.requirements.v1|1.1.0|["tender_id", "title", "requirements", "evidence", "uncertainties"]|{"title": "string", "evidence": "array", "tender_id": "string", "requirements": "array", "uncertainties": "array"}
+[exit 0]
+
+--- 3.8 PROCUREMENT V0.3 sous le contrat 1.1.0
+
+$ cd /tmp/validate/capability-marketv1 && PROCUREMENT_BIN=/tmp/validate/capability-marketv1/runners/procurement/target/release/procurement CPL_SCHEMA_VERSION=1.1.0 /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1
+RUNNER OUTPUT: identique a la reference
+DATABASE: capability_market_v1_test
+CONTACT: OperationOutcome.SUCCESS
+ASSET: OperationOutcome.SUCCESS
+CASE: SUCCESS
+EXECUTION: SUCCESS
+ARTIFACT: SUCCESS
+ARTIFACT STATUS: VALIDATED
+STRUCTURALLY VALID: True
+SCHEMA VERSION: 1.1.0
+RUST PROCUREMENT V0.3 -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+$ /tmp/cm_venv/bin/python /home/claude/validation/verify_artifact_status.py /tmp/validate/capability-marketv1 1.1.0 2>&1
+SQL artifact_status: VALIDATED
+SQL schema_name: cm.procurement.requirements.v1
+SQL schema_version: 1.1.0
+SQL artifact_type: TENDER_REQUIREMENTS
+SQL runner_type: PROCUREMENT
+SQL runner_version: 0.3.0
+SQL execution_status: CREATED
+SQL requirements: 7
+SQL binding_requirements: 5
+CONTENT INTEGRITY: MATCH
+PAYLOAD ROUND-TRIP IDENTICAL: True
+structurally_valid: True
+VERIFY 1.1.0: PASS
+ROLLBACK
+[exit 0]
+
+--- 3.9 Rejouabilite : seconde execution sous chaque version
+
+$ cd /tmp/validate/capability-marketv1 && CPL_SCHEMA_VERSION=1.0.0 /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1 | tail -4
+STRUCTURALLY VALID: True
+SCHEMA VERSION: 1.0.0
+RUST PROCUREMENT V0.3 -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+$ cd /tmp/validate/capability-marketv1 && CPL_SCHEMA_VERSION=1.1.0 /tmp/cm_venv/bin/python tests/test_procurement_v03_integration.py 2>&1 | tail -4
+STRUCTURALLY VALID: True
+SCHEMA VERSION: 1.1.0
+RUST PROCUREMENT V0.3 -> CPL B6: PASS
+ROLLBACK: donnees de test non conservees
+[exit 0]
+
+
+################################################################
+# 4. ROLLBACK
+################################################################
+Nombre de lignes par table du schema cpl apres les tests :
+accounts=0
+asset_creation_requests=0
+asset_identifiers=0
+asset_identity_resolutions=0
+asset_merge_requests=0
+assets=0
+canonical_asset_identity_decisions=0
+canonical_case_decisions=0
+canonical_relationship_decisions=0
+case_event_types=0
+case_events=0
+case_mutation_requests=0
+case_participants=0
+cases=0
+contact_asset_relationships=0
+contact_creation_requests=0
+contact_point_verifications=0
+contact_points=0
+contacts=0
+domain_projections=0
+external_references=0
+identity_operations=0
+manufacturer_knowledge_dashboard_entries=0
+manufacturer_knowledge_documents=0
+merge_proposals=0
+relationship_mutation_requests=0
+runner_artifact_schema_definitions=2
+runner_artifacts=0
+runner_execution_corrections=0
+runner_executions=0
+runner_governance_decisions=0
+
+$ diff /tmp/validate/counts_before.txt /tmp/validate/counts_after.txt
+27c27
+< runner_artifact_schema_definitions=0
+---
+> runner_artifact_schema_definitions=2
+[exit 1]
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At capability_market_v1_test -c "select 'contacts', count(*) from cpl.contacts union all select 'assets', count(*) from cpl.assets union all select 'cases', count(*) from cpl.cases union all select 'runner_executions', count(*) from cpl.runner_executions union all select 'runner_artifacts', count(*) from cpl.runner_artifacts union all select 'runner_governance_decisions', count(*) from cpl.runner_governance_decisions"
+contacts|0
+assets|0
+cases|0
+runner_executions|0
+runner_artifacts|0
+runner_governance_decisions|0
+[exit 0]
+
+
+################################################################
+# 5. COMPATIBILITE FONCTIONNELLE
+################################################################
+
+$ /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement --contract-version 1.0.0 CM-COMPLEX-001 'Services linguistiques multilingues' /tmp/validate/capability-marketv1/tests/fixtures/procurement/tender_complex_v1.txt | cmp - /tmp/validate/capability-marketv1/procurement_output_v02.json && echo 'profil 1.0.0 = sortie V0.2, octet pour octet'
+profil 1.0.0 = sortie V0.2, octet pour octet
+[exit 0]
+
+$ git -C /tmp/validate/capability-marketv1 diff --stat db30fe2 HEAD -- procurement_output.json procurement_output_v02.json contracts/procurement_requirements_v1.json install_contracts.py tests/test_procurement_integration.py tests/test_procurement_rust_integration.py tests/test_procurement_v02_integration.py tests/fixtures/procurement/tender_complex_v1.txt runners/procurement/test_tender.txt | wc -l
+0
+[exit 0]
+
+$ diff <(git -C /tmp/validate/capability-marketv1 show db30fe2:runners/procurement/src/main.rs | sed -n '/^mod tests {/,$p') <(sed -n '/^mod tests {/,$p' /tmp/validate/capability-marketv1/runners/procurement/src/legacy.rs) && echo 'cinq tests V0.2 : texte identique'
+cinq tests V0.2 : texte identique
+[exit 0]
+
+$ /tmp/cm_venv/bin/python /tmp/validate/compat.py /tmp/validate/capability-marketv1 /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement
+== tender_complex_v1.txt
+  exigences 1.0.0 : 5 {'OBLIGATION': 3, 'PROHIBITION': 1, 'CONDITIONAL_OBLIGATION': 1}
+  exigences 1.1.0 : 7 {'OBLIGATION': 3, 'PROHIBITION': 1, 'CONDITIONAL_OBLIGATION': 1, 'OPTIONAL': 1, 'EXEMPTION': 1}
+    CONDITIONAL_OBLIGATION   binding=True  x1
+    EXEMPTION                binding=False x1
+    OBLIGATION               binding=True  x3
+    OPTIONAL                 binding=False x1
+    PROHIBITION              binding=True  x1
+  OPTIONAL/EXEMPTION jamais binding, jamais OBLIGATION : OK
+  7 preuves = tranche exacte du fichier source, a la ligne indiquee : OK
+  exigences 1.0.0 retrouvees a l'identique (categorie, texte) en 1.1.0 : 5 / 5
+  filtre binding==true sur 1.1.0 : 5 exigences
+== tender_v03_modalities.txt
+  exigences 1.0.0 : 14 {'OBLIGATION': 8, 'PROHIBITION': 5, 'CONDITIONAL_OBLIGATION': 1}
+  exigences 1.1.0 : 26 {'OBLIGATION': 7, 'OPTIONAL': 4, 'PROHIBITION': 6, 'CONDITIONAL_OBLIGATION': 4, 'EXEMPTION': 5}
+    CONDITIONAL_OBLIGATION   binding=True  x4
+    EXEMPTION                binding=False x5
+    OBLIGATION               binding=True  x7
+    OPTIONAL                 binding=False x4
+    PROHIBITION              binding=True  x6
+  OPTIONAL/EXEMPTION jamais binding, jamais OBLIGATION : OK
+  26 preuves = tranche exacte du fichier source, a la ligne indiquee : OK
+  exigences 1.0.0 retrouvees a l'identique (categorie, texte) en 1.1.0 : 6 / 14
+    differe : OBLIGATION | En cas de retard supérieur à 2 jours, le titulaire doit en informer l'acheteur par écrit.
+    differe : OBLIGATION | La signature électronique de l'offre est obligatoire ; la visite du site est facultative.
+    differe : OBLIGATION | Le titulaire doit désigner un chef de projet unique. Il devra répondre à toute demande sous 24 heures.
+    differe : OBLIGATION | Le titulaire doit livrer sous 5 jours ouvrés, sauf si l'acheteur accorde un délai supplémentaire.
+    differe : OBLIGATION | Le titulaire ne doit en aucun cas recourir à la traduction automatique sans accord écrit.
+    differe : OBLIGATION | The supplier shall provide a certified translation when the document is intended for a court.
+    differe : PROHIBITION | Les candidats ne doivent pas nécessairement détenir la certification ISO 17100.
+    differe : PROHIBITION | The supplier shall not be required to attend meetings in person.
+  filtre binding==true sur 1.1.0 : 17 exigences
+[exit 0]
+
+--- Consommateurs de la charge utile dans CPL, PI et ce depot
+
+$ grep -rnIiE 'cm\.procurement|TENDER_REQUIREMENTS|procurement' /home/claude/paxtonef/cpl /home/claude/paxtonef/cpl-product-integration --exclude-dir=.git | wc -l
+0
+[exit 0]
+
+$ grep -rnE '\["requirements"\]|"binding"' --include=*.py /tmp/validate/capability-marketv1/tests /tmp/validate/capability-marketv1/install_contracts.py
+/tmp/validate/capability-marketv1/tests/test_procurement_rust_integration.py:37:assert len(procurement_payload["requirements"]) == 3
+/tmp/validate/capability-marketv1/tests/test_procurement_rust_integration.py:155:        assert len(artifact.payload["requirements"]) == 3
+/tmp/validate/capability-marketv1/tests/test_procurement_v03_contract.py:107:        broken["requirements"][0]["category"] = "SUGGESTION"
+/tmp/validate/capability-marketv1/tests/test_procurement_v03_contract.py:122:            for requirement in payload["requirements"]:
+/tmp/validate/capability-marketv1/tests/test_procurement_v03_integration.py:74:assert len(procurement_payload["requirements"]) == 7
+/tmp/validate/capability-marketv1/tests/test_procurement_v03_integration.py:77:categories = [item["category"] for item in procurement_payload["requirements"]]
+/tmp/validate/capability-marketv1/tests/test_procurement_v02_integration.py:37:assert len(procurement_payload["requirements"]) == 5
+/tmp/validate/capability-marketv1/tests/test_procurement_v02_integration.py:41:categories = [item["category"] for item in procurement_payload["requirements"]]
+/tmp/validate/capability-marketv1/tests/test_procurement_v02_integration.py:162:        assert len(artifact.payload["requirements"]) == 5
+[exit 0]
+
+
+################################################################
+# 6. ETAT FINAL DES DEPOTS
+################################################################
+
+$ git -C /home/claude/paxtonef/cpl status --short | wc -l && git -C /home/claude/paxtonef/cpl rev-parse HEAD
+0
+3ccdf63a8e2fd2879bbb9eea71053ab11c176e7c
+[exit 0]
+
+$ git -C /home/claude/paxtonef/cpl-product-integration status --short | wc -l && git -C /home/claude/paxtonef/cpl-product-integration rev-parse HEAD
+0
+dc3ac3283cc3c5cb274171b11fd39a613c370189
+[exit 0]
+
+$ git -C /tmp/validate/capability-marketv1 status --short | wc -l && git -C /tmp/validate/capability-marketv1 rev-parse HEAD
+0
+d8d675e71441d66fa007995f4ded6b6e11e22d2a
+[exit 0]
+
+$ git -C /tmp/validate/capability-marketv1 ls-files | xargs -I{} file -b --mime-encoding /tmp/validate/capability-marketv1/{} | sort | uniq -c
+     23 us-ascii
+     16 utf-8
+[exit 0]
+
+$ /usr/lib/postgresql/16/bin/psql -h 127.0.0.1 -p 55432 -U cm_validation -At postgres -c "select datname from pg_database where not datistemplate order by 1"
+capability_market_v1_test
+postgres
+[exit 0]
+
+$ date -u +%Y-%m-%dT%H:%M:%SZ
+2026-11-20T09:42:51Z
+[exit 0]
+
+
+################################################################
+# 7. COMPLEMENTS
+################################################################
+--- 7.1 Ecarts entre profils sur le jeu V0.3 : chaque ligne retenue en 1.0.0 est-elle couverte en 1.1.0 ?
+
+$ /tmp/cm_venv/bin/python /tmp/validate/coverage.py /tmp/validate/capability-marketv1 /tmp/validate/capability-marketv1/runners/procurement/target/release/procurement
+ligne  5 | 1.0.0 OBLIGATION             -> 1.1.0 OBLIGATION(binding=True) + OBLIGATION(binding=True)
+ligne  8 | 1.0.0 OBLIGATION             -> 1.1.0 OBLIGATION(binding=True) + OPTIONAL(binding=False)
+ligne 12 | 1.0.0 OBLIGATION             -> 1.1.0 PROHIBITION(binding=True)
+ligne 19 | 1.0.0 OBLIGATION             -> 1.1.0 CONDITIONAL_OBLIGATION(binding=True)
+ligne 20 | 1.0.0 OBLIGATION             -> 1.1.0 CONDITIONAL_OBLIGATION(binding=True)
+ligne 21 | 1.0.0 OBLIGATION             -> 1.1.0 CONDITIONAL_OBLIGATION(binding=True)
+ligne 27 | 1.0.0 PROHIBITION            -> 1.1.0 EXEMPTION(binding=False)
+ligne 30 | 1.0.0 PROHIBITION            -> 1.1.0 EXEMPTION(binding=False)
+lignes 1.0.0 sans exigence correspondante en 1.1.0 : 0
+[exit 0]
+
+--- 7.2 Identite du commit teste et du paquet de livraison
+
+$ git -C /tmp/validate/capability-marketv1 rev-parse HEAD 'HEAD^{tree}'
+d8d675e71441d66fa007995f4ded6b6e11e22d2a
+6747e1cfb91bfc192dd42d4a9d91694462362f10
+[exit 0]
+
+$ git -C /home/claude/capability-marketv1 rev-parse feature/procurement-v0.3
+d8d675e71441d66fa007995f4ded6b6e11e22d2a
+[exit 0]
+
+$ rm -rf /tmp/validate/bundle_check && git clone -q https://github.com/paxtonef/capability-marketv1 /tmp/validate/bundle_check && git -C /tmp/validate/bundle_check rev-parse HEAD && git -C /tmp/validate/bundle_check fetch -q /home/claude/validation/procurement-v0.3.bundle feature/procurement-v0.3:feature/procurement-v0.3 && git -C /tmp/validate/bundle_check rev-parse feature/procurement-v0.3 'feature/procurement-v0.3^{tree}'
+db30fe2a76d699db525d2527d81ba8dfb97cc886
+d8d675e71441d66fa007995f4ded6b6e11e22d2a
+6747e1cfb91bfc192dd42d4a9d91694462362f10
+[exit 0]
+
+$ rm -rf /tmp/validate/patch_check && git clone -q https://github.com/paxtonef/capability-marketv1 /tmp/validate/patch_check && git -C /tmp/validate/patch_check checkout -q -b feature/procurement-v0.3 && git -C /tmp/validate/patch_check -c user.name=check -c user.email=check@example.invalid am -q /home/claude/validation/procurement-v0.3.patch && git -C /tmp/validate/patch_check rev-parse 'HEAD^{tree}'
+6747e1cfb91bfc192dd42d4a9d91694462362f10
+[exit 0]
+
+$ git -C /home/claude/capability-marketv1 ls-remote --heads origin
+db30fe2a76d699db525d2527d81ba8dfb97cc886	refs/heads/main
+[exit 0]
+
+$ sha256sum procurement-v0.3.bundle procurement-v0.3.patch | sed 's#  #  #'
+51efd33ae56820362a3b81c9dd0b9cc8b244fe253e3cb8b4241290b75dbe796c  procurement-v0.3.bundle
+384d774e74c9d8963e544b640a5efa51fcd2dff2e7c162d4006decc5477d1499  procurement-v0.3.patch
+[exit 0]
