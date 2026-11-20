@@ -28,16 +28,31 @@ RunnerArtifact VALIDATED (CPL B6)
 | `schema_version` | `1.0.0` (voir ci-dessous) |
 | `semantic_function` / `lifecycle_role` / `presentation_role` | inchangés : `EXECUTION_OUTPUT_CARRIER` / `FINAL` / `INTERNAL` |
 
-### Quelle `schema_version` déclarer
+### Registre B6 et `schema_version`
 
-- **`1.0.0`, sans rien installer.** La charge utile 1.1.0 a exactement les cinq
-  champs racine du contrat 1.0.0, avec les mêmes types. C'est la valeur par
-  défaut du test d'intégration.
-- **`1.1.0`, après installation du contrat dans CPL.** Le fichier
-  `contracts/procurement_requirements_v1_1.json` est au format des contrats B6
-  et passe `install_contracts.py`. Son installation dans le registre de CPL est
-  une opération côté CPL, hors périmètre de ce dépôt. Le test se lance alors avec
-  `CPL_SCHEMA_VERSION=1.1.0`.
+B6 ne valide un artifact que si le couple (`schema_name`, `schema_version`)
+déclaré a une ligne dans `cpl.runner_artifact_schema_definitions`. Sans cette
+ligne, `register_artifact` renvoie `SUCCESS` mais l'artifact est `REJECTED` :
+il faut toujours contrôler `artifact_status`, pas le résultat de l'appel.
+
+`tests/register_contract_b6.py` enregistre un contrat de `contracts/` dans le
+registre de la base de test. Il refuse toute autre base, est idempotent et
+n'écrase jamais un contrat existant de contenu différent.
+
+```bash
+python3 tests/register_contract_b6.py contracts/procurement_requirements_v1.json
+python3 tests/register_contract_b6.py contracts/procurement_requirements_v1_1.json
+```
+
+- **`1.0.0`** : la charge utile 1.1.0 a exactement les cinq champs racine du
+  contrat 1.0.0, avec les mêmes types. Elle est validée sous cette version dès
+  que le contrat 1.0.0 est au registre, ce que V0.2 exigeait déjà. C'est la
+  valeur par défaut du test d'intégration.
+- **`1.1.0`** : demande l'enregistrement du contrat 1.1.0 (commande ci-dessus),
+  puis `CPL_SCHEMA_VERSION=1.1.0`.
+
+Dans les deux cas, aucun changement de code n'est nécessaire dans CPL ou PI :
+l'enregistrement d'un contrat est une ligne de données dans le registre.
 
 ## Test d'intégration
 
@@ -49,8 +64,13 @@ cd runners/procurement && cargo build --release && cd ../..
 
 export DATABASE_URL=postgresql://…/capability_market_v1_test
 export PROCUREMENT_BIN=$PWD/runners/procurement/target/release/procurement   # optionnel
-python3 tests/test_procurement_v03_integration.py
+python3 tests/test_procurement_v03_integration.py                          # sous 1.0.0
+CPL_SCHEMA_VERSION=1.1.0 python3 tests/test_procurement_v03_integration.py # sous 1.1.0
 ```
+
+Avec SQLAlchemy 2.1 ou plus récent, une URL `postgresql://` sélectionne le
+pilote `psycopg` (version 3), alors que CPL déclare `psycopg2-binary`. Si
+`psycopg` n'est pas installé, écrire l'URL `postgresql+psycopg2://…`.
 
 Le test :
 
@@ -91,13 +111,19 @@ le JSON Schema si `jsonschema` est installé.
 python3 -m unittest tests/test_procurement_v03_contract.py -v
 ```
 
-## Hypothèse à confirmer côté CPL
+## Règle de validation de B6
 
-La compatibilité repose sur le fait que B6 valide les champs racine déclarés par
-le contrat (`required_fields`, `field_types`) et ne contraint pas le contenu des
-tableaux. Cette hypothèse découle du format du contrat et du précédent V0.2
-(champ `category` ajouté aux éléments sous la version 1.0.0). Le code de CPL n'est
-pas dans ce dépôt : seule l'exécution du test d'intégration la confirme.
+Vérifiée dans CPL (`app/cpl/runners/artifacts.py`, fonction
+`_validate_structure`, commit `3ccdf63`) et par l'exécution du test
+d'intégration sous les deux versions :
+
+- chaque champ de `required_fields` doit être présent à la racine ;
+- chaque champ racine déclaré dans `field_types` doit avoir le type indiqué ;
+- le contenu des tableaux n'est pas contrôlé, et un champ racine non déclaré
+  est toléré.
+
+L'extension 1.1.0, logée dans les éléments des tableaux, est donc compatible
+par construction.
 
 ## Consommateurs existants
 

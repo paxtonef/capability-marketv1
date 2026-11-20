@@ -7,6 +7,14 @@
 | Environnement | Linux x86-64, rustc 1.97.0, cargo 1.97.0, Python 3.13 |
 | Dépendances | serde 1.0.229, serde_json 1.0.154 |
 
+> **Mise à jour du 2026-11-20 (validation technique).** Le test d'intégration
+> CPL B6, non exécuté pendant le développement, l'a été lors de la validation :
+> artifact `VALIDATED` sous les versions 1.0.0 et 1.1.0 du contrat, sur une base
+> `capability_market_v1_test` locale, avec CPL au commit `3ccdf63`. Le détail est
+> dans les livrables de validation (`VALIDATION_REPORT_v0.3.md`,
+> `CPL_B6_INTEGRATION_v0.3.md`, `TEST_EXECUTION_v0.3.log`). Les sections
+> ci-dessous décrivent l'état à la livraison du développement.
+
 ## Synthèse
 
 | Suite | Commande | Résultat |
