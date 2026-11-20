@@ -1,0 +1,133 @@
+use std::env;
+use std::fs;
+use std::process;
+
+fn escape_json(s: &str) -> String {
+    let mut out = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_control() => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+fn extract(tender_id: &str, title: &str, source: &str) -> String {
+    let mut requirements = Vec::new();
+    let mut evidence = Vec::new();
+
+    for (index, line) in source.lines().enumerate() {
+        let text = line.trim();
+        let lower = text.to_lowercase();
+
+        let is_requirement = [
+            "doit ", "doivent ", "devra ", "devront ",
+            "obligatoire", "must ", "shall ",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker));
+
+        if !text.is_empty() && is_requirement {
+            let id = format!("REQ-{:04}", requirements.len() + 1);
+
+            requirements.push(format!(
+                "{{\"id\":{},\"text\":{}}}",
+                escape_json(&id),
+                escape_json(text)
+            ));
+
+            evidence.push(format!(
+                "{{\"requirement_id\":{},\"source_line\":{},\"excerpt\":{}}}",
+                escape_json(&id),
+                index + 1,
+                escape_json(text)
+            ));
+        }
+    }
+
+    let uncertainties = if requirements.is_empty() {
+        vec![escape_json(
+            "Aucune exigence explicite detectee par les regles V0.1"
+        )]
+    } else {
+        Vec::new()
+    };
+
+    format!(
+        "{{\"tender_id\":{},\"title\":{},\"requirements\":[{}],\"evidence\":[{}],\"uncertainties\":[{}]}}",
+        escape_json(tender_id),
+        escape_json(title),
+        requirements.join(","),
+        evidence.join(","),
+        uncertainties.join(",")
+    )
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 4 {
+        eprintln!("Usage: procurement TENDER_ID TITLE SOURCE_FILE");
+        process::exit(2);
+    }
+
+    let source = match fs::read_to_string(&args[3]) {
+        Ok(text) => text,
+        Err(error) => {
+            eprintln!("Erreur de lecture: {error}");
+            process::exit(1);
+        }
+    };
+
+    println!("{}", extract(&args[1], &args[2], &source));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_french_requirement() {
+        let output = extract(
+            "T-001",
+            "Test",
+            "Le fournisseur doit presenter une assurance."
+        );
+        assert!(output.contains("REQ-0001"));
+        assert!(output.contains("\"source_line\":1"));
+    }
+
+    #[test]
+    fn detects_english_requirement() {
+        let output = extract(
+            "T-002",
+            "Test",
+            "The supplier shall provide documentation."
+        );
+        assert!(output.contains("REQ-0001"));
+    }
+
+    #[test]
+    fn reports_no_detected_requirements() {
+        let output = extract("T-003", "Test", "Presentation generale.");
+        assert!(output.contains("Aucune exigence explicite"));
+        assert!(output.contains("\"requirements\":[]"));
+    }
+
+    #[test]
+    fn escapes_json_special_characters() {
+        let output = extract(
+            "T-004",
+            "Test",
+            "Le candidat doit fournir un document \"certifie\"."
+        );
+        assert!(output.contains("\\\"certifie\\\""));
+    }
+}
