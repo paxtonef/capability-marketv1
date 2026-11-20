@@ -1,0 +1,688 @@
+{
+  "tender_id": "CM-V03-001",
+  "title": "Services de traduction et d'interprétation",
+  "requirements": [
+    {
+      "id": "REQ-0001",
+      "category": "OBLIGATION",
+      "text": "Le titulaire doit désigner un chef de projet unique.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0001"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0002",
+      "category": "OBLIGATION",
+      "text": "Il devra répondre à toute demande sous 24 heures.",
+      "binding": true,
+      "modality": "devra",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0002"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0003",
+      "category": "OBLIGATION",
+      "text": "Selon l'art. R. 2143-3, le candidat est tenu de produire une attestation fiscale.",
+      "binding": true,
+      "modality": "est tenu",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0003"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0004",
+      "category": "OBLIGATION",
+      "text": "The supplier shall deliver all translations in editable format.",
+      "binding": true,
+      "modality": "shall",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0004"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0005",
+      "category": "OBLIGATION",
+      "text": "La signature électronique de l'offre est obligatoire ;",
+      "binding": true,
+      "modality": "obligatoire",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0005"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0006",
+      "category": "OPTIONAL",
+      "text": "la visite du site est facultative.",
+      "binding": false,
+      "modality": "facultative",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0006"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0007",
+      "category": "PROHIBITION",
+      "text": "Le prestataire ne doit pas transmettre les documents à des tiers.",
+      "binding": true,
+      "modality": "ne doit pas",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0007"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0008",
+      "category": "PROHIBITION",
+      "text": "Le titulaire ne doit en aucun cas recourir à la traduction automatique sans accord écrit.",
+      "binding": true,
+      "modality": "ne doit en aucun",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0008"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0009",
+      "category": "PROHIBITION",
+      "text": "Il est interdit de conserver des copies après la fin du marché.",
+      "binding": true,
+      "modality": "interdit",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0009"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0010",
+      "category": "PROHIBITION",
+      "text": "The contractor MUST NOT subcontract interpreting services.",
+      "binding": true,
+      "modality": "MUST NOT",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0010"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0011",
+      "category": "PROHIBITION",
+      "text": "Bidders may not alter the price schedule.",
+      "binding": true,
+      "modality": "may not",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0011"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0012",
+      "category": "CONDITIONAL_OBLIGATION",
+      "text": "Si le volume dépasse 100 000 mots, le prestataire doit proposer un calendrier révisé.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [
+        {
+          "type": "IF",
+          "text": "Si le volume dépasse 100 000 mots",
+          "source_line": 18,
+          "byte_start": 837,
+          "byte_end": 871
+        }
+      ],
+      "evidence_ids": [
+        "EV-0012"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0013",
+      "category": "CONDITIONAL_OBLIGATION",
+      "text": "En cas de retard supérieur à 2 jours, le titulaire doit en informer l'acheteur par écrit.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [
+        {
+          "type": "IF",
+          "text": "En cas de retard supérieur à 2 jours",
+          "source_line": 19,
+          "byte_start": 926,
+          "byte_end": 964
+        }
+      ],
+      "evidence_ids": [
+        "EV-0013"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0014",
+      "category": "CONDITIONAL_OBLIGATION",
+      "text": "Le titulaire doit livrer sous 5 jours ouvrés, sauf si l'acheteur accorde un délai supplémentaire.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [
+        {
+          "type": "EXCEPTION",
+          "text": "sauf si l'acheteur accorde un délai supplémentaire",
+          "source_line": 20,
+          "byte_start": 1066,
+          "byte_end": 1118
+        }
+      ],
+      "evidence_ids": [
+        "EV-0014"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0015",
+      "category": "CONDITIONAL_OBLIGATION",
+      "text": "The supplier shall provide a certified translation when the document is intended for a court.",
+      "binding": true,
+      "modality": "shall",
+      "conditions": [
+        {
+          "type": "WHEN",
+          "text": "when the document is intended for a court",
+          "source_line": 21,
+          "byte_start": 1171,
+          "byte_end": 1212
+        }
+      ],
+      "evidence_ids": [
+        "EV-0015"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0016",
+      "category": "OPTIONAL",
+      "text": "If the volume is below 10,000 words, the supplier may invoice a flat fee.",
+      "binding": false,
+      "modality": "may",
+      "conditions": [
+        {
+          "type": "IF",
+          "text": "If the volume is below 10,000 words",
+          "source_line": 22,
+          "byte_start": 1214,
+          "byte_end": 1249
+        }
+      ],
+      "evidence_ids": [
+        "EV-0016"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0017",
+      "category": "PROHIBITION",
+      "text": "En cas de sous-traitance, le titulaire ne doit pas transférer de données hors de l'Union européenne.",
+      "binding": true,
+      "modality": "ne doit pas",
+      "conditions": [
+        {
+          "type": "IF",
+          "text": "En cas de sous-traitance",
+          "source_line": 23,
+          "byte_start": 1288,
+          "byte_end": 1312
+        }
+      ],
+      "evidence_ids": [
+        "EV-0017"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0018",
+      "category": "EXEMPTION",
+      "text": "Il n'est pas obligatoire de disposer d'un bureau local.",
+      "binding": false,
+      "modality": "pas obligatoire",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0018"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0019",
+      "category": "EXEMPTION",
+      "text": "Les candidats ne doivent pas nécessairement détenir la certification ISO 17100.",
+      "binding": false,
+      "modality": "ne doivent pas nécessairement",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0019"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0020",
+      "category": "EXEMPTION",
+      "text": "Les PME sont dispensées de fournir une garantie bancaire.",
+      "binding": false,
+      "modality": "sont dispensées",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0020"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0021",
+      "category": "EXEMPTION",
+      "text": "A bank guarantee is not required for contracts below EUR 25,000.",
+      "binding": false,
+      "modality": "not required",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0021"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0022",
+      "category": "EXEMPTION",
+      "text": "The supplier shall not be required to attend meetings in person.",
+      "binding": false,
+      "modality": "not be required",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0022"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0023",
+      "category": "OPTIONAL",
+      "text": "Le candidat peut proposer des prestations complémentaires.",
+      "binding": false,
+      "modality": "peut",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0023"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0024",
+      "category": "OPTIONAL",
+      "text": "Bidders may submit variants.",
+      "binding": false,
+      "modality": "may",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0024"
+      ],
+      "uncertainty_ids": []
+    },
+    {
+      "id": "REQ-0025",
+      "category": "OBLIGATION",
+      "text": "Le titulaire doit, si possible, livrer les traductions urgentes sous 48 heures.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0025"
+      ],
+      "uncertainty_ids": [
+        "UNC-0003"
+      ]
+    },
+    {
+      "id": "REQ-0026",
+      "category": "OBLIGATION",
+      "text": "Le candidat doit fournir un mémoire technique et peut joindre des annexes.",
+      "binding": true,
+      "modality": "doit",
+      "conditions": [],
+      "evidence_ids": [
+        "EV-0026"
+      ],
+      "uncertainty_ids": [
+        "UNC-0004"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EV-0001",
+      "requirement_id": "REQ-0001",
+      "source_line": 5,
+      "excerpt": "Le titulaire doit désigner un chef de projet unique.",
+      "column_start": 1,
+      "byte_start": 135,
+      "byte_end": 188
+    },
+    {
+      "id": "EV-0002",
+      "requirement_id": "REQ-0002",
+      "source_line": 5,
+      "excerpt": "Il devra répondre à toute demande sous 24 heures.",
+      "column_start": 54,
+      "byte_start": 189,
+      "byte_end": 240
+    },
+    {
+      "id": "EV-0003",
+      "requirement_id": "REQ-0003",
+      "source_line": 6,
+      "excerpt": "Selon l'art. R. 2143-3, le candidat est tenu de produire une attestation fiscale.",
+      "column_start": 1,
+      "byte_start": 241,
+      "byte_end": 322
+    },
+    {
+      "id": "EV-0004",
+      "requirement_id": "REQ-0004",
+      "source_line": 7,
+      "excerpt": "The supplier shall deliver all translations in editable format.",
+      "column_start": 1,
+      "byte_start": 323,
+      "byte_end": 386
+    },
+    {
+      "id": "EV-0005",
+      "requirement_id": "REQ-0005",
+      "source_line": 8,
+      "excerpt": "La signature électronique de l'offre est obligatoire ;",
+      "column_start": 1,
+      "byte_start": 387,
+      "byte_end": 442
+    },
+    {
+      "id": "EV-0006",
+      "requirement_id": "REQ-0006",
+      "source_line": 8,
+      "excerpt": "la visite du site est facultative.",
+      "column_start": 56,
+      "byte_start": 443,
+      "byte_end": 477
+    },
+    {
+      "id": "EV-0007",
+      "requirement_id": "REQ-0007",
+      "source_line": 11,
+      "excerpt": "Le prestataire ne doit pas transmettre les documents à des tiers.",
+      "column_start": 1,
+      "byte_start": 496,
+      "byte_end": 562
+    },
+    {
+      "id": "EV-0008",
+      "requirement_id": "REQ-0008",
+      "source_line": 12,
+      "excerpt": "Le titulaire ne doit en aucun cas recourir à la traduction automatique sans accord écrit.",
+      "column_start": 1,
+      "byte_start": 563,
+      "byte_end": 654
+    },
+    {
+      "id": "EV-0009",
+      "requirement_id": "REQ-0009",
+      "source_line": 13,
+      "excerpt": "Il est interdit de conserver des copies après la fin du marché.",
+      "column_start": 1,
+      "byte_start": 655,
+      "byte_end": 720
+    },
+    {
+      "id": "EV-0010",
+      "requirement_id": "REQ-0010",
+      "source_line": 14,
+      "excerpt": "The contractor MUST NOT subcontract interpreting services.",
+      "column_start": 1,
+      "byte_start": 721,
+      "byte_end": 779
+    },
+    {
+      "id": "EV-0011",
+      "requirement_id": "REQ-0011",
+      "source_line": 15,
+      "excerpt": "Bidders may not alter the price schedule.",
+      "column_start": 1,
+      "byte_start": 780,
+      "byte_end": 821
+    },
+    {
+      "id": "EV-0012",
+      "requirement_id": "REQ-0012",
+      "source_line": 18,
+      "excerpt": "Si le volume dépasse 100 000 mots, le prestataire doit proposer un calendrier révisé.",
+      "column_start": 1,
+      "byte_start": 837,
+      "byte_end": 925
+    },
+    {
+      "id": "EV-0013",
+      "requirement_id": "REQ-0013",
+      "source_line": 19,
+      "excerpt": "En cas de retard supérieur à 2 jours, le titulaire doit en informer l'acheteur par écrit.",
+      "column_start": 1,
+      "byte_start": 926,
+      "byte_end": 1018
+    },
+    {
+      "id": "EV-0014",
+      "requirement_id": "REQ-0014",
+      "source_line": 20,
+      "excerpt": "Le titulaire doit livrer sous 5 jours ouvrés, sauf si l'acheteur accorde un délai supplémentaire.",
+      "column_start": 1,
+      "byte_start": 1019,
+      "byte_end": 1119
+    },
+    {
+      "id": "EV-0015",
+      "requirement_id": "REQ-0015",
+      "source_line": 21,
+      "excerpt": "The supplier shall provide a certified translation when the document is intended for a court.",
+      "column_start": 1,
+      "byte_start": 1120,
+      "byte_end": 1213
+    },
+    {
+      "id": "EV-0016",
+      "requirement_id": "REQ-0016",
+      "source_line": 22,
+      "excerpt": "If the volume is below 10,000 words, the supplier may invoice a flat fee.",
+      "column_start": 1,
+      "byte_start": 1214,
+      "byte_end": 1287
+    },
+    {
+      "id": "EV-0017",
+      "requirement_id": "REQ-0017",
+      "source_line": 23,
+      "excerpt": "En cas de sous-traitance, le titulaire ne doit pas transférer de données hors de l'Union européenne.",
+      "column_start": 1,
+      "byte_start": 1288,
+      "byte_end": 1391
+    },
+    {
+      "id": "EV-0018",
+      "requirement_id": "REQ-0018",
+      "source_line": 26,
+      "excerpt": "Il n'est pas obligatoire de disposer d'un bureau local.",
+      "column_start": 1,
+      "byte_start": 1407,
+      "byte_end": 1462
+    },
+    {
+      "id": "EV-0019",
+      "requirement_id": "REQ-0019",
+      "source_line": 27,
+      "excerpt": "Les candidats ne doivent pas nécessairement détenir la certification ISO 17100.",
+      "column_start": 1,
+      "byte_start": 1463,
+      "byte_end": 1544
+    },
+    {
+      "id": "EV-0020",
+      "requirement_id": "REQ-0020",
+      "source_line": 28,
+      "excerpt": "Les PME sont dispensées de fournir une garantie bancaire.",
+      "column_start": 1,
+      "byte_start": 1545,
+      "byte_end": 1603
+    },
+    {
+      "id": "EV-0021",
+      "requirement_id": "REQ-0021",
+      "source_line": 29,
+      "excerpt": "A bank guarantee is not required for contracts below EUR 25,000.",
+      "column_start": 1,
+      "byte_start": 1604,
+      "byte_end": 1668
+    },
+    {
+      "id": "EV-0022",
+      "requirement_id": "REQ-0022",
+      "source_line": 30,
+      "excerpt": "The supplier shall not be required to attend meetings in person.",
+      "column_start": 1,
+      "byte_start": 1669,
+      "byte_end": 1733
+    },
+    {
+      "id": "EV-0023",
+      "requirement_id": "REQ-0023",
+      "source_line": 33,
+      "excerpt": "Le candidat peut proposer des prestations complémentaires.",
+      "column_start": 1,
+      "byte_start": 1765,
+      "byte_end": 1824
+    },
+    {
+      "id": "EV-0024",
+      "requirement_id": "REQ-0024",
+      "source_line": 34,
+      "excerpt": "Bidders may submit variants.",
+      "column_start": 1,
+      "byte_start": 1825,
+      "byte_end": 1853
+    },
+    {
+      "id": "EV-0025",
+      "requirement_id": "REQ-0025",
+      "source_line": 39,
+      "excerpt": "Le titulaire doit, si possible, livrer les traductions urgentes sous 48 heures.",
+      "column_start": 1,
+      "byte_start": 1982,
+      "byte_end": 2061
+    },
+    {
+      "id": "EV-0026",
+      "requirement_id": "REQ-0026",
+      "source_line": 40,
+      "excerpt": "Le candidat doit fournir un mémoire technique et peut joindre des annexes.",
+      "column_start": 1,
+      "byte_start": 2062,
+      "byte_end": 2137
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "UNC-0001",
+      "kind": "PENDING_INFORMATION",
+      "source_line": 37,
+      "text": "La date limite de dépôt reste à confirmer.",
+      "marker": "à confirmer",
+      "byte_start": 1873,
+      "byte_end": 1918,
+      "requirement_id": null
+    },
+    {
+      "id": "UNC-0002",
+      "kind": "WEAK_MODALITY",
+      "source_line": 38,
+      "text": "Le prestataire devrait fournir un rapport mensuel d'activité.",
+      "marker": "devrait",
+      "byte_start": 1919,
+      "byte_end": 1981,
+      "requirement_id": null
+    },
+    {
+      "id": "UNC-0003",
+      "kind": "VAGUE_TERM",
+      "source_line": 39,
+      "text": "Le titulaire doit, si possible, livrer les traductions urgentes sous 48 heures.",
+      "marker": "si possible",
+      "byte_start": 1982,
+      "byte_end": 2061,
+      "requirement_id": "REQ-0025"
+    },
+    {
+      "id": "UNC-0004",
+      "kind": "MULTIPLE_MODALITIES",
+      "source_line": 40,
+      "text": "Le candidat doit fournir un mémoire technique et peut joindre des annexes.",
+      "marker": "peut",
+      "byte_start": 2062,
+      "byte_end": 2137,
+      "requirement_id": "REQ-0026"
+    },
+    {
+      "id": "UNC-0005",
+      "kind": "AMBIGUOUS_NEGATION",
+      "source_line": 41,
+      "text": "Le marché ne peut être modifié que par avenant écrit.",
+      "marker": "ne peut",
+      "byte_start": 2138,
+      "byte_end": 2195,
+      "requirement_id": null
+    },
+    {
+      "id": "UNC-0006",
+      "kind": "PENDING_INFORMATION",
+      "source_line": 42,
+      "text": "the venue is TBD.",
+      "marker": "TBD",
+      "byte_start": 2245,
+      "byte_end": 2262,
+      "requirement_id": null
+    },
+    {
+      "id": "UNC-0007",
+      "kind": "WEAK_MODALITY",
+      "source_line": 43,
+      "text": "The supplier should acknowledge each order within a reasonable time.",
+      "marker": "should",
+      "byte_start": 2263,
+      "byte_end": 2331,
+      "requirement_id": null
+    },
+    {
+      "id": "UNC-0008",
+      "kind": "VAGUE_TERM",
+      "source_line": 43,
+      "text": "The supplier should acknowledge each order within a reasonable time.",
+      "marker": "reasonable",
+      "byte_start": 2263,
+      "byte_end": 2331,
+      "requirement_id": null
+    }
+  ]
+}

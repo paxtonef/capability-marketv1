@@ -1,0 +1,12 @@
+{
+  "schema_name": "cm.procurement.requirements.v1",
+  "schema_version": "1.1.0",
+  "required_fields": ["tender_id", "title", "requirements", "evidence", "uncertainties"],
+  "field_types": {
+    "tender_id": "string",
+    "title": "string",
+    "requirements": "array",
+    "evidence": "array",
+    "uncertainties": "array"
+  }
+}

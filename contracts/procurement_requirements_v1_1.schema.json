@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cm.procurement.requirements.v1/1.1.0",
+  "title": "cm.procurement.requirements.v1 - profil 1.1.0",
+  "description": "Structure detaillee de la charge utile produite par PROCUREMENT V0.3. Extension compatible de 1.0.0 : memes cinq champs racine, champs supplementaires dans les elements des tableaux uniquement.",
+  "type": "object",
+  "required": ["tender_id", "title", "requirements", "evidence", "uncertainties"],
+  "additionalProperties": false,
+  "properties": {
+    "tender_id": { "type": "string" },
+    "title": { "type": "string" },
+    "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "uncertainties": { "type": "array", "items": { "$ref": "#/$defs/uncertainty" } }
+  },
+  "$defs": {
+    "requirement_id": { "type": "string", "pattern": "^REQ-[0-9]{4,}$" },
+    "evidence_id": { "type": "string", "pattern": "^EV-[0-9]{4,}$" },
+    "uncertainty_id": { "type": "string", "pattern": "^UNC-[0-9]{4,}$" },
+    "line": { "type": "integer", "minimum": 1 },
+    "offset": { "type": "integer", "minimum": 0 },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "category", "text", "binding", "modality", "conditions", "evidence_ids", "uncertainty_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/requirement_id" },
+        "category": {
+          "enum": ["OBLIGATION", "PROHIBITION", "CONDITIONAL_OBLIGATION", "EXEMPTION", "OPTIONAL"]
+        },
+        "text": { "type": "string", "minLength": 1, "description": "Texte exact de l'enonce source." },
+        "binding": {
+          "type": "boolean",
+          "description": "Vrai pour OBLIGATION, PROHIBITION et CONDITIONAL_OBLIGATION ; faux pour EXEMPTION et OPTIONAL."
+        },
+        "modality": { "type": "string", "minLength": 1, "description": "Marqueur de modalite, extrait exact de text." },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "evidence_ids": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence_id" } },
+        "uncertainty_ids": { "type": "array", "items": { "$ref": "#/$defs/uncertainty_id" } }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["type", "text", "source_line", "byte_start", "byte_end"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["IF", "WHEN", "PROVIDED_THAT", "EXCEPTION"] },
+        "text": { "type": "string", "minLength": 1, "description": "Clause exacte, marqueur inclus." },
+        "source_line": { "$ref": "#/$defs/line" },
+        "byte_start": { "$ref": "#/$defs/offset" },
+        "byte_end": { "$ref": "#/$defs/offset" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["id", "requirement_id", "source_line", "excerpt", "column_start", "byte_start", "byte_end"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/evidence_id" },
+        "requirement_id": { "$ref": "#/$defs/requirement_id" },
+        "source_line": { "$ref": "#/$defs/line" },
+        "excerpt": { "type": "string", "minLength": 1, "description": "Octets byte_start..byte_end du fichier source." },
+        "column_start": { "type": "integer", "minimum": 1, "description": "Colonne en caracteres, base 1." },
+        "byte_start": { "$ref": "#/$defs/offset" },
+        "byte_end": { "$ref": "#/$defs/offset" }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "required": ["id", "kind", "source_line", "text", "marker", "byte_start", "byte_end", "requirement_id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uncertainty_id" },
+        "kind": {
+          "enum": [
+            "PENDING_INFORMATION",
+            "WEAK_MODALITY",
+            "VAGUE_TERM",
+            "AMBIGUOUS_NEGATION",
+            "MULTIPLE_MODALITIES",
+            "NO_REQUIREMENT_DETECTED"
+          ]
+        },
+        "source_line": { "oneOf": [{ "$ref": "#/$defs/line" }, { "type": "null" }] },
+        "text": { "type": "string", "minLength": 1 },
+        "marker": { "type": ["string", "null"] },
+        "byte_start": { "oneOf": [{ "$ref": "#/$defs/offset" }, { "type": "null" }] },
+        "byte_end": { "oneOf": [{ "$ref": "#/$defs/offset" }, { "type": "null" }] },
+        "requirement_id": { "oneOf": [{ "$ref": "#/$defs/requirement_id" }, { "type": "null" }] }
+      }
+    }
+  }
+}
